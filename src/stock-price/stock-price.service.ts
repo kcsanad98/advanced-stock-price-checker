@@ -1,4 +1,10 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  HttpException,
+  Injectable,
+  Logger,
+  NotFoundException
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { FinnhubClientService } from '../finnhub-client/finnhub-client.service';
@@ -15,28 +21,42 @@ export class StockPriceService {
     private readonly finnhubClientService: FinnhubClientService
   ) {}
 
-  public async startWatchingStock(symbol: string): Promise<void> {
-    console.log(1);
-    const isStockAlreadyWatched = !!(await this.stockRepository.findOneBy({ symbol }));
+  public async getAverageStockPrice(symbol: string): Promise<Stock> {
+    const stock = await this.getStock(symbol);
+    if (!stock) {
+      throw new NotFoundException(`Stock with symbol ${symbol} is not being watched.`);
+    }
+
+    return stock;
+  }
+
+  public async startWatchingStock(symbol: string): Promise<Stock> {
+    const isStockAlreadyWatched = !!(await this.getStock(symbol));
     if (isStockAlreadyWatched) {
       throw new ConflictException(`Stock with symbol ${symbol} is already being watched.`);
     }
-    console.log(2);
 
     try {
-      const quoteData = await this.finnhubClientService.getQuoteData(symbol);
+      const currentPrice = await this.finnhubClientService.getCurrentStockPrice(symbol);
 
       const stock = this.stockRepository.create({
         symbol,
-        average_price: quoteData.c,
-        updated_at: quoteData.t
+        average_price: currentPrice,
+        prices: []
       });
-      const stockPrice = this.stockPriceRepository.create({ price: quoteData.c, stock });
+      const stockPrice = this.stockPriceRepository.create({ price: currentPrice, stock });
       stock.prices.push(stockPrice);
 
-      await this.stockRepository.save(stock);
-    } catch (error) {
-      console.log(error);
+      return this.stockRepository.save(stock);
+    } catch (error: unknown) {
+      Logger.error(error);
+      if (error instanceof HttpException) {
+        throw error;
+      }
     }
+  }
+
+  private async getStock(symbol: string): Promise<Stock> {
+    return this.stockRepository.findOneBy({ symbol });
   }
 }
