@@ -1,0 +1,32 @@
+version: '3.5'
+
+services:
+  db:
+    container_name: advanced-stock-price-checker.db
+    image: postgres
+    env_file:
+      - .env
+    volumes:
+      - rdbms_data:/var/lib/postgresql/data
+    ports:
+      - '${POSTGRES_PORT}:${POSTGRES_PORT}/tcp'
+
+  api:
+    container_name: advanced-stock-price-checker.api
+    build:
+      dockerfile: Dockerfile
+      context: .
+      target: development
+    volumes:
+      - .:/usr/src/app
+    env_file:
+      - .env
+    command: npm run start
+    ports:
+      - '${API_PORT}:${API_PORT}'
+    depends_on:
+      - db
+
+volumes:
+  rdbms_data:
+    driver: local
