@@ -1,12 +1,4 @@
-import {
-  BaseEntity,
-  Column,
-  Entity,
-  Index,
-  OneToMany,
-  PrimaryColumn,
-  UpdateDateColumn
-} from 'typeorm';
+import { BaseEntity, Column, Entity, OneToMany, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 import { StockPrice } from './stock-price.entity';
 import { Exclude } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
@@ -15,7 +7,6 @@ import { ApiProperty } from '@nestjs/swagger';
 export class Stock extends BaseEntity {
   @PrimaryColumn()
   @ApiProperty({ example: 'AAPL', description: 'Symbol of the stock.' })
-  @Index()
   symbol: string;
 
   @Column({ type: 'float' })
