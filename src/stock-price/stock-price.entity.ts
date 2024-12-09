@@ -11,6 +11,7 @@ import {
 import { Stock } from './stock.entity';
 
 @Entity({ name: 'stock-price' })
+@Index(['created_at', 'stock_symbol'])
 export class StockPrice extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: string;
@@ -19,10 +20,12 @@ export class StockPrice extends BaseEntity {
   price: number;
 
   @CreateDateColumn()
-  @Index()
   created_at: Date;
 
   @ManyToOne(() => Stock, stock => stock.prices, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'stock_symbol' })
   stock: Stock;
+
+  @Column()
+  stock_symbol: string;
 }
